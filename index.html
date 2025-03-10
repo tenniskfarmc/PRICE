@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>הפקת הצעת מחיר</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; direction: rtl; }
+        .container { width: 60%; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: #f4f4f4; }
+        #logo { max-width: 150px; margin: 10px auto; display: block; }
+        .total { font-weight: bold; background-color: #f4f4f4; }
+        #notes { width: 100%; height: 80px; margin-top: 10px; }
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; top: 0; left: 0; width: 100%; }
+            .remove-btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="printArea">
+        <img id="logo" src="https://lh3.googleusercontent.com/p/AF1QipP5lxKTUmswiPEq8BmMqMiqJD1Fe6xlQ8PVw21f=s680-w680-h510" alt="לוגו החברה">
+        <table>
+            <thead>
+                <tr>
+                    <th>תיאור השירות / המוצר</th>
+                    <th>יחידות</th>
+                    <th>מחיר ליחידה</th>
+                    <th>סה"כ</th>
+                    <th>סה"כ כולל מע"מ (18%)</th>
+                    <th class="remove-btn">הסר</th>
+                </tr>
+            </thead>
+            <tbody id="quoteBody">
+            </tbody>
+            <tfoot>
+                <tr class="total">
+                    <td colspan="3">סה"כ</td>
+                    <td id="grandTotal">0 ש"ח</td>
+                    <td id="vatTotal">0 ש"ח</td>
+                    <td class="remove-btn"></td>
+                </tr>
+            </tfoot>
+        </table>
+        <h3>הערות:</h3>
+        <p id="printNotes"></p>
+    </div>
+    <div class="container">
+        <h2>הפקת הצעת מחיר</h2>
+        <button onclick="addService()">הוסף שירות</button>
+        <button onclick="printQuote()">הדפס הצעה</button>
+        <br><br>
+        <textarea id="notes" placeholder="הוסף הערות להצעה"></textarea>
+    </div>
+    
+    <script>
+        function addService() {
+            let tbody = document.getElementById("quoteBody");
+            let row = document.createElement("tr");
+            row.innerHTML = `
+                <td><input type="text" placeholder="שם השירות"></td>
+                <td><input type="number" value="1" min="1" class="quantity" oninput="updatePrices()"></td>
+                <td><input type="number" value="0" min="0" class="price" oninput="updatePrices()"> ש"ח</td>
+                <td class="totalPrice">0 ש"ח</td>
+                <td class="vatPrice">0 ש"ח</td>
+                <td class="remove-btn"><button onclick="removeService(this)">❌</button></td>
+            `;
+            tbody.appendChild(row);
+            updatePrices();
+        }
+
+        function removeService(button) {
+            let row = button.parentElement.parentElement;
+            row.remove();
+            updatePrices();
+        }
+
+        function updatePrices() {
+            let total = 0;
+            document.querySelectorAll("#quoteBody tr").forEach(row => {
+                let quantity = parseInt(row.querySelector(".quantity").value) || 0;
+                let price = parseFloat(row.querySelector(".price").value) || 0;
+                let rowTotal = quantity * price;
+                let vatTotal = rowTotal * 1.18;
+                row.querySelector(".totalPrice").innerText = rowTotal.toFixed(2) + " ש\"ח";
+                row.querySelector(".vatPrice").innerText = vatTotal.toFixed(2) + " ש\"ח";
+                total += rowTotal;
+            });
+            document.getElementById("grandTotal").innerText = total.toFixed(2) + " ש\"ח";
+            document.getElementById("vatTotal").innerText = (total * 1.18).toFixed(2) + " ש\"ח";
+        }
+
+        function printQuote() {
+            document.getElementById("printNotes").innerText = document.getElementById("notes").value;
+            window.print();
+        }
+    </script>
+</body>
+</html>
