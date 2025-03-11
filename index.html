@@ -12,7 +12,7 @@
         th { background-color: #f4f4f4; }
         #logo { max-width: 150px; margin: 10px auto; display: block; }
         .total { font-weight: bold; background-color: #f4f4f4; }
-        #notes { width: 100%; height: 80px; margin-top: 10px; }
+        #notes, #recipient { width: 100%; margin-top: 10px; }
         @media print {
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
@@ -24,15 +24,15 @@
 <body>
     <div id="printArea">
         <img id="logo" src="https://lh3.googleusercontent.com/p/AF1QipP5lxKTUmswiPEq8BmMqMiqJD1Fe6xlQ8PVw21f=s680-w680-h510" alt="לוגו החברה">
+        <h3>לכבוד: <span id="printRecipient"></span></h3>
         <table>
             <thead>
                 <tr>
                     <th>תיאור השירות / המוצר</th>
                     <th>יחידות</th>
-                    <th>מחיר ליחידה</th>
+                    <th>מחיר ליחידה (כולל מע"מ)</th>
+                    <th>מחיר ליחידה (לפני מע"מ)</th>
                     <th>סה"כ</th>
-                    <th>סה"כ כולל מע"מ (18%)</th>
-                    <th class="remove-btn">הסר</th>
                 </tr>
             </thead>
             <tbody id="quoteBody">
@@ -40,17 +40,22 @@
             <tfoot>
                 <tr class="total">
                     <td colspan="3">סה"כ</td>
+                    <td id="grandTotalBeforeVAT">0 ש"ח</td>
                     <td id="grandTotal">0 ש"ח</td>
-                    <td id="vatTotal">0 ש"ח</td>
-                    <td class="remove-btn"></td>
                 </tr>
             </tfoot>
         </table>
         <h3>הערות:</h3>
         <p id="printNotes"></p>
+        <h4>פרטי בנק להעברה:</h4>
+        <p>בנק: לאומי</p>
+        <p>שם להעברה: עמותת גולדן רקט</p>
+        <p>חשבון: 123456789, סניף 111</p>
     </div>
     <div class="container">
         <h2>הפקת הצעת מחיר</h2>
+        <label>לכבוד:</label>
+        <input type="text" id="recipient" placeholder="שם הלקוח">
         <button onclick="addService()">הוסף שירות</button>
         <button onclick="printQuote()">הדפס הצעה</button>
         <br><br>
@@ -64,9 +69,9 @@
             row.innerHTML = `
                 <td><input type="text" placeholder="שם השירות"></td>
                 <td><input type="number" value="1" min="1" class="quantity" oninput="updatePrices()"></td>
-                <td><input type="number" value="0" min="0" class="price" oninput="updatePrices()"> ש"ח</td>
+                <td><input type="number" value="0" min="0" class="priceWithVAT" oninput="updatePrices()"> ש"ח</td>
+                <td class="priceWithoutVAT">0 ש"ח</td>
                 <td class="totalPrice">0 ש"ח</td>
-                <td class="vatPrice">0 ש"ח</td>
                 <td class="remove-btn"><button onclick="removeService(this)">❌</button></td>
             `;
             tbody.appendChild(row);
@@ -81,20 +86,24 @@
 
         function updatePrices() {
             let total = 0;
+            let totalBeforeVAT = 0;
             document.querySelectorAll("#quoteBody tr").forEach(row => {
                 let quantity = parseInt(row.querySelector(".quantity").value) || 0;
-                let price = parseFloat(row.querySelector(".price").value) || 0;
-                let rowTotal = quantity * price;
-                let vatTotal = rowTotal * 1.18;
+                let priceWithVAT = parseFloat(row.querySelector(".priceWithVAT").value) || 0;
+                let priceWithoutVAT = priceWithVAT / 1.18;
+                let rowTotal = quantity * priceWithVAT;
+                let rowTotalBeforeVAT = quantity * priceWithoutVAT;
+                row.querySelector(".priceWithoutVAT").innerText = priceWithoutVAT.toFixed(2) + " ש\"ח";
                 row.querySelector(".totalPrice").innerText = rowTotal.toFixed(2) + " ש\"ח";
-                row.querySelector(".vatPrice").innerText = vatTotal.toFixed(2) + " ש\"ח";
                 total += rowTotal;
+                totalBeforeVAT += rowTotalBeforeVAT;
             });
             document.getElementById("grandTotal").innerText = total.toFixed(2) + " ש\"ח";
-            document.getElementById("vatTotal").innerText = (total * 1.18).toFixed(2) + " ש\"ח";
+            document.getElementById("grandTotalBeforeVAT").innerText = totalBeforeVAT.toFixed(2) + " ש\"ח";
         }
 
         function printQuote() {
+            document.getElementById("printRecipient").innerText = document.getElementById("recipient").value;
             document.getElementById("printNotes").innerText = document.getElementById("notes").value;
             window.print();
         }
